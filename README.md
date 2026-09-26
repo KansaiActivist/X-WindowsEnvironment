@@ -1,4 +1,5 @@
-# 
+# X-WindowsEnvironment
+改良版制作中...
 ## ビルド方法
 前提としてcgoを使うため `CGO_ENABLED=1` とCコンパイラが必要です。
 ### MacOS
