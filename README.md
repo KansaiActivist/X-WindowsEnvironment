@@ -1,4 +1,4 @@
-# xbrowser
+# x-WindowsEnvironment
 
 X (旧Twitter) 専用の軽量Windowsデスクトップアプリです。Go言語 + WebView2で作られており、
 Chromiumをまるごと同梱するElectron系アプリとは違い、Windowsに入っている
@@ -197,7 +197,7 @@ go build -ldflags="-H windowsgui" -o xbrowser.exe .
   不安定になることがある)を使うのをやめ、現在のモニターのワークエリアを
   基準に中央寄せで計算するようにしました。
 
-## アカウント管理(プロファイル)・アイコン(.syso)の対応
+## アカウント管理(プロファイル)
 
 ### プロファイルで5個以上のアカウントを管理する
 
