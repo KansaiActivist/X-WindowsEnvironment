@@ -1,4 +1,4 @@
-# x-WindowsEnvironment
+# X-WindowsEnvironment
 
 X (旧Twitter) 専用の軽量Windowsデスクトップアプリです。Go言語 + WebView2で作られており、
 Chromiumをまるごと同梱するElectron系アプリとは違い、Windowsに入っている
