@@ -34,8 +34,8 @@ const (
 	idProfileAdd        = 15
 	idColorBase         = 100
 	idRadiusBase        = 200
-	idProfileNewBase    = 300 // 300番台: そのプロファイルで新しいタブを開く
-	idProfileSwitchBase = 400 // 400番台: このタブのプロファイルを切り替える
+	idProfileNewBase    = 300 
+	idProfileSwitchBase = 400 
 )
 
 type colorItem struct {
@@ -90,16 +90,14 @@ func themeChanged() {
 	invalidateBar()
 }
 
-// showContextMenu はタブバー上の右クリックメニュー(設定を含む)を表示する。
 func showContextMenu(hwnd win.HWND, x, y int32) {
 	zone, tabIdx := app.hitTest(x, y)
 
 	menu := win.CreatePopupMenu()
-	defer win.DestroyMenu(menu) // サブメニューもまとめて破棄される
+	defer win.DestroyMenu(menu) 
 
 	appendMenu(menu, win.MF_STRING, idNewTab, "新しいタブ")
 
-	// ---- プロファイル(アカウント切替) ----
 	profiles := allProfiles()
 	newTabProfiles := win.CreatePopupMenu()
 	for i, p := range profiles {
@@ -133,7 +131,6 @@ func showContextMenu(hwnd win.HWND, x, y int32) {
 	}
 	appendMenu(menu, win.MF_SEPARATOR, 0, "")
 
-	// ---- 設定 ----
 	settings := win.CreatePopupMenu()
 	preset := strings.ToLower(cfg.Theme.Preset)
 	chk := func(b bool) uint32 {
@@ -217,7 +214,6 @@ func showContextMenu(hwnd win.HWND, x, y int32) {
 		if cmd == idThemeLight {
 			p = "light"
 		}
-		// プリセットを切り替えたら、個別に変えた色はいったんクリアする
 		cfg.Theme = Theme{Preset: p, TabRadius: cfg.Theme.TabRadius}
 		themeChanged()
 	case cmd == idResetColors:
