@@ -12,34 +12,31 @@ import (
 	"github.com/lxn/win"
 )
 
-// Theme はタブバーの配色・丸み。config.json の "theme" で変更できる。
-// 色は "#RRGGBB" 形式。空文字("")のものは preset("dark" または "light")の色が使われる。
+
 type Theme struct {
 	Preset          string `json:"preset"`
-	BarBackground   string `json:"barBackground"`   // タブバー全体の背景
-	TabActive       string `json:"tabActive"`       // 選択中のタブの背景
-	TabInactive     string `json:"tabInactive"`     // 選択されていないタブの背景
-	TabHover        string `json:"tabHover"`        // マウスを乗せたタブの背景
-	TabText         string `json:"tabText"`         // タブの文字色
-	TabTextInactive string `json:"tabTextInactive"` // 選択されていないタブの文字色
-	Icon            string `json:"icon"`            // ボタンのアイコン色
-	ButtonHover     string `json:"buttonHover"`     // ボタン/閉じる(タブ)のホバー背景
-	CloseHover      string `json:"closeHover"`      // ウィンドウ右上「閉じる」のホバー背景
-	CloseHoverIcon  string `json:"closeHoverIcon"`  // 同、アイコン色
-	TabRadius       int    `json:"tabRadius"`       // タブ・ボタンの角の丸み(px)
+	BarBackground   string `json:"barBackground"`   
+	TabActive       string `json:"tabActive"`       
+	TabInactive     string `json:"tabInactive"`     
+	TabHover        string `json:"tabHover"`        
+	TabText         string `json:"tabText"`         
+	TabTextInactive string `json:"tabTextInactive"` 
+	Icon            string `json:"icon"`            
+	ButtonHover     string `json:"buttonHover"`     
+	CloseHover      string `json:"closeHover"`      
+	CloseHoverIcon  string `json:"closeHoverIcon"`  
+	TabRadius       int    `json:"tabRadius"`       
 }
 
 type Config struct {
 	Comment       string   `json:"_comment"`
 	Zoom          float64  `json:"zoom"`
 	Theme         Theme    `json:"theme"`
-	Notifications string   `json:"notifications"` // "on" または "off"
-	Profiles      []string `json:"profiles"`      // "Default"以外に追加したプロファイル名
-}
+	Notifications string   `json:"notifications"` 
+	Profiles      []string `json:"profiles"`      
 
 var cfg = Config{Zoom: 1.0}
 
-// palette は実際に描画に使う色(config.json から解決済み)。
 var palette struct {
 	bar, tabActive, tabInactive, tabHover   win.COLORREF
 	tabText, tabTextInactive, icon          win.COLORREF
@@ -70,7 +67,6 @@ func appBaseDir() string {
 
 func configPath() string { return filepath.Join(appBaseDir(), "config.json") }
 
-// loadConfig は config.json を読み込む(無ければ既定値で作成する)。
 func loadConfig() {
 	_ = os.MkdirAll(appBaseDir(), 0o755)
 	cfg = Config{
@@ -97,7 +93,7 @@ func loadConfig() {
 			}
 		}
 	}
-	saveConfig() // 無いキーを補って書き戻し、ユーザーが編集しやすい形にする
+	saveConfig() 
 	resolveTheme()
 }
 
