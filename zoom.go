@@ -1,4 +1,4 @@
-//go:build windows
+
 
 package main
 
@@ -22,11 +22,7 @@ func nearestZoomIndex(z float64) int {
 	return best
 }
 
-// setControllerZoom は ICoreWebView2Controller::put_ZoomFactor を直接呼ぶ。
-// (go-webview2 側に公開メソッドが無いため、vtblの並び順で呼び出している)
-// vtbl: 0-2 IUnknown, 3 get_IsVisible, 4 put_IsVisible, 5 get_Bounds, 6 put_Bounds,
-//
-//	7 get_ZoomFactor, 8 put_ZoomFactor
+
 func setControllerZoom(c *edge.ICoreWebView2Controller, z float64) {
 	if c == nil {
 		return
@@ -45,7 +41,6 @@ func getControllerZoom(c *edge.ICoreWebView2Controller) float64 {
 	return z
 }
 
-// applyZoomTo は現在の拡大率をそのWebViewに適用する。
 func applyZoomTo(ch *edge.Chromium) {
 	if ch == nil {
 		return
@@ -94,9 +89,7 @@ func (m *TabManager) ZoomStep(dir int) {
 
 func (m *TabManager) ZoomReset() { m.setZoom(1.0) }
 
-// applyNotificationSetting は現在の設定(ON/OFF)を1つのタブへ適用する。
-// OFFのときはWebView2の権限要求を常にDenyへ、ONのときはAllowへ即答させる
-// (Xの通知許可ダイアログ自体を出さずに、設定どおりの挙動にする)。
+
 func applyNotificationSetting(ch *edge.Chromium) {
 	state := edge.CoreWebView2PermissionStateAllow
 	if cfg.Notifications == "off" {
@@ -105,7 +98,7 @@ func applyNotificationSetting(ch *edge.Chromium) {
 	ch.SetPermission(edge.CoreWebView2PermissionKindNotifications, state)
 }
 
-// applyNotificationSettingAll は開いている全タブへ即時反映する(設定メニューから呼ぶ)。
+
 func (m *TabManager) applyNotificationSettingAll() {
 	for _, t := range m.tabs {
 		if t.ready {
