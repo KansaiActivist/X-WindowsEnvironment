@@ -19,8 +19,8 @@ func makeFont(face string, height int32, weight int32) win.HFONT {
 	var lf win.LOGFONT
 	lf.LfHeight = height
 	lf.LfWeight = weight
-	lf.LfCharSet = 1 // DEFAULT_CHARSET
-	lf.LfQuality = 5 // CLEARTYPE_QUALITY
+	lf.LfCharSet = 1 
+	lf.LfQuality = 5 
 	u := syscall.StringToUTF16(face)
 	for i := 0; i < len(u) && i < len(lf.LfFaceName)-1; i++ {
 		lf.LfFaceName[i] = u[i]
@@ -39,7 +39,6 @@ func (p *painter) fill(r win.RECT, col win.COLORREF) {
 	win.DeleteObject(win.HGDIOBJ(brush))
 }
 
-// round は角丸で塗る(GDI+でアンチエイリアス。使えなければ通常のGDIで代替)。
 func (p *painter) round(r win.RECT, radius int32, col win.COLORREF) {
 	if fillRoundRectAA(p.hdc, r, radius, col) {
 		return
@@ -88,7 +87,6 @@ func paintChrome(hwnd win.HWND) {
 	win.GetClientRect(hwnd, &client)
 	w, h := client.Right-client.Left, int32(titleBarH)
 
-	// ダブルバッファ(ちらつき防止)
 	mem := win.CreateCompatibleDC(hdc)
 	bmp := win.CreateCompatibleBitmap(hdc, w, h)
 	oldBmp := win.SelectObject(mem, win.HGDIOBJ(bmp))
