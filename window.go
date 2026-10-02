@@ -9,25 +9,23 @@ import (
 	"github.com/lxn/win"
 )
 
-// ------- レイアウト定数(Chromeライクな寸法) -------
 const (
-	titleBarH    = 46 // タブ行の高さ
-	navBtnW      = 38 // 戻る/進む/再読み込みボタン幅
+	titleBarH    = 46 
+	navBtnW      = 38 
 	tabMinW      = 96
 	tabMaxW      = 240
 	tabGap       = 4
 	newTabBtnW   = 38
-	winBtnW      = 48 // 最小化/最大化/閉じるの幅(Chrome/Edgeとほぼ同じ)
-	zoomBtnW     = 30 // 拡大/縮小ボタン
-	zoomLabelW   = 56 // 「100%」表示(クリックで100%に戻す)
+	winBtnW      = 48 
+	zoomBtnW     = 30 
+	zoomLabelW   = 56 
 	zoomClusterW = zoomBtnW*2 + zoomLabelW
-	resizeGrip   = 6 // 端をつかんでリサイズできる範囲
+	resizeGrip   = 6 
 
-	sizeMinimized    = 1  // WM_SIZE の wParam (SIZE_MINIMIZED)
-	smCXPaddedBorder = 92 // SM_CXPADDEDBORDER (lxn/winに定数が無いため直書き)
+	sizeMinimized    = 1  
+	smCXPaddedBorder = 92 
 )
 
-// NCCALCSIZE_PARAMS (lxn/winに定義が無いため必要な分だけ自前で用意)
 type ncCalcSizeParams struct {
 	Rgrc  [3]win.RECT
 	Lppos uintptr
@@ -51,7 +49,6 @@ const (
 	zoneZoomIn
 )
 
-// ChromeWindow はアプリのメインウィンドウ(タイトルバー+タブ+コンテンツ)を保持する。
 type ChromeWindow struct {
 	hwnd     win.HWND
 	tabs     *TabManager
@@ -65,15 +62,12 @@ var app *ChromeWindow
 func initChromeWindow(hwnd win.HWND) {
 	app = &ChromeWindow{hwnd: hwnd, hoverTab: -1}
 	app.tabs = newTabManager(hwnd)
-	// 先にコンテンツ領域のサイズを確定させてからタブを作る。
-	// (逆順だとWebView2が高さ0の状態で初期化されてしまい、
-	//  ページが真っ白のまま表示されないことがある)
 	app.layout()
 	app.tabs.AddTab(homeURL, "")
 	app.layout()
 }
 
-// contentRect はタイトルバーより下、ページを表示する領域。
+
 func (c *ChromeWindow) contentRect() win.RECT {
 	var rc win.RECT
 	win.GetClientRect(c.hwnd, &rc)
@@ -88,7 +82,6 @@ func (c *ChromeWindow) layout() {
 	win.InvalidateRect(c.hwnd, nil, false)
 }
 
-// tabRect は index番目のタブの矩形をタイトルバー座標系で返す。
 func (c *ChromeWindow) tabRects() []win.RECT {
 	var client win.RECT
 	win.GetClientRect(c.hwnd, &client)
@@ -158,12 +151,10 @@ func (c *ChromeWindow) navButtonRect(which hitZone) win.RECT {
 	return win.RECT{}
 }
 
-// tabVisualRect は当たり判定用スロットから、実際に描く丸いタブの矩形を求める。
 func tabVisualRect(slot win.RECT) win.RECT {
 	return win.RECT{Left: slot.Left, Top: slot.Top + 8, Right: slot.Right, Bottom: slot.Bottom - 4}
 }
 
-// tabCloseRect はタブ右端の丸い「閉じる」ボタンの矩形。
 func tabCloseRect(slot win.RECT) win.RECT {
 	vr := tabVisualRect(slot)
 	const sz = 24
@@ -171,7 +162,6 @@ func tabCloseRect(slot win.RECT) win.RECT {
 	return win.RECT{Left: vr.Right - 8 - sz, Top: top, Right: vr.Right - 8, Bottom: top + sz}
 }
 
-// zoomRect は拡大縮小ボタン群(縮小 / 100% / 拡大)の矩形。
 func (c *ChromeWindow) zoomRect(which hitZone) win.RECT {
 	var client win.RECT
 	win.GetClientRect(c.hwnd, &client)
@@ -198,7 +188,6 @@ func ptInRect(r win.RECT, x, y int32) bool {
 	return x >= r.Left && x < r.Right && y >= r.Top && y < r.Bottom
 }
 
-// hitTest はタイトルバー上のクリック位置がどの要素かを判定する。
 func (c *ChromeWindow) hitTest(x, y int32) (hitZone, int) {
 	if y >= titleBarH {
 		return zoneNone, -1
@@ -253,10 +242,6 @@ func (c *ChromeWindow) toggleMaximize() {
 }
 
 func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	// ---- appの準備前(起動直後のShowWindow中など)でも必ず処理するメッセージ ----
-	// 以前はここをappが無い間はDefWindowProcに任せていたため、ショートカットの
-	// 「最大化で起動」などで起動直後に最大化されると補正が効かず、
-	// 端をクリックして再計算されるまでずれたままになっていた。
 	switch msg {
 	case win.WM_NCCALCSIZE:
 		if wParam != 0 && isMaximized(hwnd) {
@@ -267,11 +252,6 @@ func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 		mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
 		mmi.PtMinTrackSize.X = 480
 		mmi.PtMinTrackSize.Y = 360
-		// NCCALCSIZE側の補正だけでは、最大化した瞬間のウィンドウの「外側の矩形」
-		// (リストア時に戻る場所やAeroの計算に使われる)がモニター全体のまま
-		// ずれてしまい、端を触るまで完全に馴染まないことがある。ここでも
-		// ワークエリアに合わせておくことで、起動直後の最大化でも一発で
-		// タスクバーを隠さずぴったり収まるようにする。
 		if mon := win.MonitorFromWindow(hwnd, win.MONITOR_DEFAULTTONEAREST); mon != 0 {
 			var mi win.MONITORINFO
 			mi.CbSize = uint32(unsafe.Sizeof(mi))
@@ -287,13 +267,10 @@ func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	case win.WM_NCHITTEST:
 		return ncHitTest(hwnd, lParam)
 	case win.WM_NCACTIVATE:
-		// 非クライアント領域(枠)を再描画させない。アクティブ/非アクティブ切替時に
-		// 上部が白く塗られる原因になる。
 		return win.DefWindowProc(hwnd, msg, wParam, ^uintptr(0))
 	case win.WM_NCPAINT:
 		return 0
 	case win.WM_ERASEBKGND:
-		// 背景は白ではなくバーの色で塗る(未描画の瞬間に白く見えないように)
 		var rc win.RECT
 		win.GetClientRect(hwnd, &rc)
 		brush := createSolidBrush(palette.bar)
@@ -308,8 +285,6 @@ func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 
 	switch msg {
 	case win.WM_ACTIVATE, win.WM_ACTIVATEAPP, win.WM_SETFOCUS, win.WM_DISPLAYCHANGE, win.WM_WINDOWPOSCHANGED:
-		// 他のウィンドウとの前後入れ替わりなどの後に、上部が再描画されず白く
-		// 残ることがあるため、明示的に再描画する。
 		r := win.DefWindowProc(hwnd, msg, wParam, lParam)
 		repaintBar()
 		return r
@@ -373,7 +348,6 @@ func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 			win.DestroyWindow(hwnd)
 		case zoneNone:
 			if y < titleBarH {
-				// タイトルバーの余白: ドラッグ移動を開始する定番の実装。
 				win.ReleaseCapture()
 				win.PostMessage(hwnd, win.WM_NCLBUTTONDOWN, uintptr(win.HTCAPTION), 0)
 			}
@@ -428,8 +402,6 @@ func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)
 }
 
-// ncHitTest は端をつかんだ時だけリサイズカーソルを出し、それ以外はHTCLIENTを返す。
-// タイトルバーの見た目/クリック判定はすべてクライアント領域側(WM_LBUTTONDOWN)で自前処理する。
 func ncHitTest(hwnd win.HWND, lParam uintptr) uintptr {
 	var rc win.RECT
 	win.GetWindowRect(hwnd, &rc)
@@ -462,10 +434,6 @@ func ncHitTest(hwnd win.HWND, lParam uintptr) uintptr {
 	return uintptr(win.HTCLIENT)
 }
 
-// maximizedClientRect: 枠なしウィンドウ(WS_CAPTION無し)を最大化すると、Windowsは
-// 見えないリサイズ枠の分だけ画面外にはみ出した矩形を提案してくる。最大化中は
-// クライアント領域を「そのモニターのワークエリア(タスクバーを除いた領域)」に
-// 固定することで、常にぴったり画面いっぱいになる。
 func maximizedClientRect(hwnd win.HWND, lParam uintptr) {
 	mon := win.MonitorFromWindow(hwnd, win.MONITOR_DEFAULTTONEAREST)
 	if mon == 0 {
@@ -480,7 +448,6 @@ func maximizedClientRect(hwnd win.HWND, lParam uintptr) {
 	params.Rgrc[0] = mi.RcWork
 }
 
-// repaintBar はタブバー部分を今すぐ再描画する。
 func repaintBar() {
 	r := win.RECT{Left: 0, Top: 0, Right: 32000, Bottom: titleBarH}
 	win.RedrawWindow(app.hwnd, &r, 0, win.RDW_INVALIDATE|win.RDW_UPDATENOW)
