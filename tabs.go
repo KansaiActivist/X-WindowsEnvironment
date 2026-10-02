@@ -25,16 +25,13 @@ func registerTabContainerClass(hInstance win.HINSTANCE) {
 	win.RegisterClassEx(&wc)
 }
 
-// Tab は1つのタブ = 1つの子HWND + 1つのWebView2コントローラ。
-// タブごとに別のWebView2コントローラを持つが、DataPathを共有しているので
-// 裏側のEdgeブラウザプロセス/ログイン状態は1つにまとまり、メモリを節約できる。
 type Tab struct {
 	hwnd     win.HWND
 	chromium *edge.Chromium
 	title    string
 	url      string
-	profile  string // このタブが使うプロファイル名("" はDefault扱い)
-	ready    bool   // Embed完了後にtrue
+	profile  string 
+	ready    bool   
 }
 
 func (t *Tab) Eval(js string) {
@@ -63,7 +60,6 @@ func (m *TabManager) Active() *Tab {
 	return m.tabs[m.active]
 }
 
-// AddTab は指定したプロファイル("" ならDefault)で新しいタブを開く。
 func (m *TabManager) AddTab(url string, profile string) {
 	hInstance := win.GetModuleHandle(nil)
 	child := win.CreateWindowEx(
@@ -96,10 +92,10 @@ func (m *TabManager) AddTab(url string, profile string) {
 		case 0xBB, 0x6B: // + (=) / テンキー+
 			m.ZoomStep(1)
 			return true
-		case 0xBD, 0x6D: // - / テンキー-
+		case 0xBD, 0x6D: 
 			m.ZoomStep(-1)
 			return true
-		case 0x30, 0x60: // 0 / テンキー0
+		case 0x30, 0x60: 
 			m.ZoomReset()
 			return true
 		}
@@ -109,7 +105,6 @@ func (m *TabManager) AddTab(url string, profile string) {
 	debugLog("Embed開始 url=%s", url)
 	if !chromium.Embed(uintptr(child)) {
 		debugLog("Embed失敗")
-		// WebView2ランタイムが見つからない等。ユーザーに知らせて終了。
 		win.MessageBox(m.parent,
 			mustUTF16("WebView2 ランタイムの初期化に失敗しました。\r\nMicrosoft Edge WebView2 Runtime をインストールしてください。"),
 			mustUTF16("xbrowser"), win.MB_ICONERROR)
@@ -122,13 +117,10 @@ func (m *TabManager) AddTab(url string, profile string) {
 	if settings, err := chromium.GetSettings(); err == nil {
 		_ = settings.PutAreDefaultContextMenusEnabled(true)
 		_ = settings.PutAreDevToolsEnabled(false)
-		// 拡大縮小は自前で処理する(Ctrl+ホイール / Ctrl+ +,-,0 とバー上のボタン)
 		_ = settings.PutIsZoomControlEnabled(false)
 	}
 
-	// WebView2は読み込み前後に既定で背景が黒になることがあり、
-	// 真っ黒な画面のまま何も表示されないように見える原因になる。
-	// 明示的に白へ変更しておく。
+
 	if controller := chromium.GetController(); controller != nil {
 		if c2 := controller.GetICoreWebView2Controller2(); c2 != nil {
 			_ = c2.PutDefaultBackgroundColor(edge.COREWEBVIEW2_COLOR{A: 255, R: 255, G: 255, B: 255})
@@ -144,9 +136,6 @@ func (m *TabManager) AddTab(url string, profile string) {
 	m.Switch(newIndex)
 }
 
-// SwitchTabProfile は既存タブを閉じて、同じURLを別プロファイルで開き直す
-// (WebView2は作成後にプロファイル/DataPathを変更できないため)。
-// タブの並び順(位置)は維持する。
 func (m *TabManager) SwitchTabProfile(idx int, profile string) {
 	if idx < 0 || idx >= len(m.tabs) {
 		return
@@ -158,7 +147,7 @@ func (m *TabManager) SwitchTabProfile(idx int, profile string) {
 	win.DestroyWindow(m.tabs[idx].hwnd)
 	m.tabs = append(m.tabs[:idx], m.tabs[idx+1:]...)
 
-	m.AddTab(url, profile) // 末尾に追加され、アクティブになる
+	m.AddTab(url, profile) 
 	last := len(m.tabs) - 1
 	t := m.tabs[last]
 	m.tabs = m.tabs[:last]
@@ -187,9 +176,6 @@ func (m *TabManager) Switch(i int) {
 	}
 }
 
-// Refresh はアクティブなタブのWebView2を「表示状態」にして、サイズと位置を再通知する。
-// WebView2は非表示の親ウィンドウの下で作られると、可視状態が更新されず
-// 描画されない(真っ黒のまま)ことがあるため、明示的に表示させる。
 func (m *TabManager) Refresh() {
 	if m.active < 0 || m.active >= len(m.tabs) {
 		return
