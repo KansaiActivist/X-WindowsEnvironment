@@ -10,8 +10,6 @@ import (
 	"github.com/lxn/win"
 )
 
-// GDI+ (アンチエイリアス付き)で角丸を描くための最小ラッパー。
-// 初期化に失敗した場合は通常のGDI(RoundRect)にフォールバックする。
 var (
 	gdiplusDLL           = syscall.NewLazyDLL("gdiplus.dll")
 	pGdiplusStartup      = gdiplusDLL.NewProc("GdiplusStartup")
@@ -50,7 +48,6 @@ func argb(c win.COLORREF) uintptr {
 	return uintptr(0xff000000 | r<<16 | g<<8 | b)
 }
 
-// fillRoundRectAA はアンチエイリアス付きで角丸四角形を塗る。成功したらtrue。
 func fillRoundRectAA(hdc win.HDC, r win.RECT, radius int32, col win.COLORREF) bool {
 	if !gdiplusReady {
 		return false
@@ -60,7 +57,7 @@ func fillRoundRectAA(hdc win.HDC, r win.RECT, radius int32, col win.COLORREF) bo
 		return false
 	}
 	defer pGdipDeleteGraphics.Call(g)
-	pGdipSetSmoothing.Call(g, 4) // SmoothingModeAntiAlias
+	pGdipSetSmoothing.Call(g, 4) 
 	if s, _, _ := pGdipCreateSolidFill.Call(argb(col), uintptr(unsafe.Pointer(&brush))); s != 0 {
 		return false
 	}
