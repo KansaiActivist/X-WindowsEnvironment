@@ -9,9 +9,6 @@ import (
 	"github.com/lxn/win"
 )
 
-// このバージョンの github.com/lxn/win には
-// CreateSolidBrush / FillRect / DrawTextW が含まれていないため、
-// 必要な分だけ自前でDLL関数を呼び出す。
 
 var (
 	gdi32   = syscall.NewLazyDLL("gdi32.dll")
@@ -35,8 +32,7 @@ func setWindowText(hwnd win.HWND, s string) {
 	procSetWindowTextW.Call(uintptr(hwnd), uintptr(unsafe.Pointer(p)))
 }
 
-// lxn/winにMonitorFromPointが無いため自前で用意する。POINTは2つのint32(x,y)を
-// そのまま64bit値として渡せば、Win32のPOINT構造体のバイト配置と一致する。
+
 func monitorFromPoint(pt win.POINT, flags uint32) win.HMONITOR {
 	packed := uint64(uint32(pt.X)) | uint64(uint32(pt.Y))<<32
 	r, _, _ := procMonitorFromPoint.Call(uintptr(packed), uintptr(flags))
