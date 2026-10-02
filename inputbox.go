@@ -63,15 +63,12 @@ func inputBoxWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr 
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)
 }
 
-// showInputBox はテキスト入力欄付きの小さなウィンドウを出し、OKなら(文字列, true)、
-// キャンセルなら("", false)を返す。専用のダイアログリソースは使わず、
-// 通常のウィンドウ+標準コントロール(EDIT/BUTTON)だけで組んだ簡易モーダル。
 func showInputBox(owner win.HWND, title, prompt, defaultText string) (string, bool) {
 	hInstance := win.GetModuleHandle(nil)
 	registerInputBoxClass(hInstance)
 
 	const w, h = 360, 150
-	x, y, _, _ := initialWindowRect() // 画面中央寄せの計算を流用
+	x, y, _, _ := initialWindowRect() 
 	var ownerRect win.RECT
 	if win.GetWindowRect(owner, &ownerRect) {
 		x = ownerRect.Left + (ownerRect.Right-ownerRect.Left-w)/2
@@ -112,7 +109,6 @@ func showInputBox(owner win.HWND, title, prompt, defaultText string) (string, bo
 		if r <= 0 {
 			break
 		}
-		// EnterでOK、EscでキャンセルにするためIsDialogMessage相当の処理を簡易的に行う。
 		if msg.Message == win.WM_KEYDOWN && (msg.HWnd == hwnd || win.IsChild(hwnd, msg.HWnd)) {
 			if msg.WParam == uintptr(win.VK_RETURN) {
 				ibState.ok, ibState.done = true, true
